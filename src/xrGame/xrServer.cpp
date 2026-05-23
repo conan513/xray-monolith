@@ -654,7 +654,7 @@ u32 xrServer::OnMessage(NET_Packet& P, ClientID sender) // Non-Zero means broadc
 										actor->o_torso.yaw = torso_yaw;
 										actor->o_torso.pitch = torso_pitch;
 										actor->o_torso.roll = torso_roll;
-										actor->fHealth = health;
+										actor->set_health(health);
 										actor->s_team = team;
 										actor->s_squad = squad;
 										actor->s_group = group;
