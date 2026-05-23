@@ -202,6 +202,8 @@ public:
 	                            const u16 id_entity, bool send_message = true);
 
 	xrClientData* SelectBestClientToMigrateTo(CSE_Abstract* E, BOOL bForceAnother = FALSE);
+	u8 GetEntityLevelID(CSE_Abstract* E);
+	u8 GetClientLevelID(IClient* CL);
 	void SendConnectResult(IClient* CL, u8 res, u8 res1, char* ResultStr);
 	void __stdcall SendConfigFinished(ClientID const& clientId);
 	void SendProfileCreationError(IClient* CL, char const* reason);
@@ -247,6 +249,8 @@ public:
 	virtual void SendTo_LL(ClientID ID, void* data, u32 size, u32 dwFlags = DPNSEND_GUARANTEED, u32 dwTimeout = 0);
 	void SecureSendTo(xrClientData* xrCL, NET_Packet& P, u32 dwFlags = DPNSEND_GUARANTEED, u32 dwTimeout = 0);
 	virtual void SendBroadcast(ClientID exclude, NET_Packet& P, u32 dwFlags = DPNSEND_GUARANTEED);
+	// Level-filtered broadcast: only sends to clients on the same GameGraph level.
+	void SendBroadcastLevel(ClientID exclude, u8 levelID, NET_Packet& P, u32 dwFlags = DPNSEND_GUARANTEED);
 	void GetPooledState(xrClientData* xrCL);
 	void ClearDisconnectedPool() { m_disconnected_clients.Clear(); };
 

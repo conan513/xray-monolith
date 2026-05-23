@@ -98,6 +98,74 @@ CSE_Abstract* xrServer::ID_to_entity(u16 ID)
 }
 
 //--------------------------------------------------------------------
+// Multi-level routing helpers
+// Returns the GameGraph level ID (u8) for an entity, or 0xFF if unknown.
+u8 xrServer::GetEntityLevelID(CSE_Abstract* E)
+{
+	if (!E)
+		return 0xFF;
+	CSE_ALifeObject* aobj = smart_cast<CSE_ALifeObject*>(E);
+	if (!aobj)
+		return 0xFF;
+	if (!ai().get_alife())
+		return 0xFF;
+	GameGraph::_GRAPH_ID gid = aobj->m_tGraphID;
+	if (!ai().game_graph().valid_vertex_id(gid))
+		return 0xFF;
+	return ai().game_graph().vertex(gid)->level_id();
+}
+
+// Returns the GameGraph level ID (u8) for a connected client based on
+// their owned actor entity.  Returns 0xFF if indeterminate.
+u8 xrServer::GetClientLevelID(IClient* CL)
+{
+	if (!CL)
+		return 0xFF;
+	xrClientData* xrCL = static_cast<xrClientData*>(CL);
+	return GetEntityLevelID(xrCL->owner);
+}
+
+// Broadcasts packet P to every connected, accepted client that is on the
+// same GameGraph level as levelID, optionally excluding one client.
+void xrServer::SendBroadcastLevel(ClientID exclude, u8 levelID, NET_Packet& P, u32 dwFlags)
+{
+	struct LevelFilteredSenderFunctor
+	{
+		xrServer*  m_owner;
+		ClientID   m_exclude;
+		u8         m_levelID;
+		void*      m_data;
+		u32        m_size;
+		u32        m_dwFlags;
+
+		LevelFilteredSenderFunctor(xrServer* owner, ClientID exclude, u8 lvl,
+		                           void* data, u32 size, u32 flags)
+			: m_owner(owner), m_exclude(exclude), m_levelID(lvl),
+			  m_data(data), m_size(size), m_dwFlags(flags)
+		{
+		}
+
+		void operator()(IClient* client)
+		{
+			xrClientData* xrCL = static_cast<xrClientData*>(client);
+			if (client->ID == m_exclude)      return;
+			if (!client->flags.bConnected)    return;
+			if (!xrCL->net_Accepted)          return;
+			// Only send to clients on the same level, or to clients whose level
+			// is unknown (0xFF) so they still receive global messages.
+			u8 cLvl = m_owner->GetClientLevelID(client);
+			if (cLvl != m_levelID && cLvl != 0xFF)
+				return;
+			m_owner->SendTo_LL(client->ID, m_data, m_size, m_dwFlags);
+		}
+	};
+
+	LevelFilteredSenderFunctor functor(this, exclude, levelID,
+	                                   P.B.data, P.B.count, dwFlags);
+	net_players.ForEachClientDo(functor);
+}
+
+//--------------------------------------------------------------------
 IClient* xrServer::client_Create()
 {
 	return xr_new<xrClientData>();
@@ -524,8 +592,89 @@ u32 xrServer::OnMessage(NET_Packet& P, ClientID sender) // Non-Zero means broadc
 			u32 ClientPing = CL->stats.getPing();
 			P.w_seek(P.r_tell() + 2, &ClientPing, 4);
 			//-------------------------------------------------------------------
-			if (SV_Client)
+			
+			bool remote_level = false;
+			if (SV_Client && CL->ID != SV_Client->ID)
+			{
+				u8 host_lvl = GetClientLevelID(SV_Client);
+				u8 client_lvl = GetClientLevelID(CL);
+				if (host_lvl != 0xFF && client_lvl != 0xFF && host_lvl != client_lvl)
+				{
+					remote_level = true;
+				}
+			}
+
+			if (remote_level)
+			{
+				NET_Packet temp_P;
+				temp_P.construct(P.B.data, P.B.count);
+				u16 msg_type;
+				temp_P.r_begin(msg_type);
+				u16 actor_id = temp_P.r_u16();
+				u32 ping = temp_P.r_u32();
+
+				if (temp_P.r_elapsed() >= 9) // health(4) + time(4) + flags(1)
+				{
+					float health = temp_P.r_float();
+					u32 time_server = temp_P.r_u32();
+					u8 flags = temp_P.r_u8();
+
+					if (temp_P.r_elapsed() >= 28) // pos(12) + model_yaw(4) + torso_yaw(4) + torso_pitch(4) + torso_roll(4)
+					{
+						Fvector actor_pos = temp_P.r_vec3();
+						float model_yaw = temp_P.r_float();
+						float torso_yaw = temp_P.r_float();
+						float torso_pitch = temp_P.r_float();
+						float torso_roll = temp_P.r_float();
+
+						if (temp_P.r_elapsed() >= 5) // team(1) + squad(1) + group(1) + mstate(2)
+						{
+							u8 team = temp_P.r_u8();
+							u8 squad = temp_P.r_u8();
+							u8 group = temp_P.r_u8();
+							u16 mstate = temp_P.r_u16();
+
+							if (temp_P.r_elapsed() >= 12) // accel(6) + velocity(6)
+							{
+								Fvector accel_vec, vel_vec;
+								temp_P.r_sdir(accel_vec);
+								temp_P.r_sdir(vel_vec);
+
+								if (temp_P.r_elapsed() >= 7) // rad(4) + slot(1) + items(2)
+								{
+									float radiation = temp_P.r_float();
+									u8 active_slot = temp_P.r_u8();
+									u16 num_items = temp_P.r_u16();
+
+									CSE_ALifeCreatureActor* actor = smart_cast<CSE_ALifeCreatureActor*>(CL->owner);
+									if (actor)
+									{
+										actor->o_Position.set(actor_pos);
+										actor->o_model = model_yaw;
+										actor->o_torso.yaw = torso_yaw;
+										actor->o_torso.pitch = torso_pitch;
+										actor->o_torso.roll = torso_roll;
+										actor->fHealth = health;
+										actor->s_team = team;
+										actor->s_squad = squad;
+										actor->s_group = group;
+										actor->mstate = mstate;
+										actor->accel.set(accel_vec);
+										actor->velocity.set(vel_vec);
+										actor->fRadiation = radiation;
+										actor->weapon = active_slot;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			else if (SV_Client)
+			{
 				SendTo(SV_Client->ID, P, net_flags(TRUE, TRUE));
+			}
+
 #ifdef DEBUG
 			VERIFY(verify_entities());
 #endif
@@ -544,7 +693,21 @@ u32 xrServer::OnMessage(NET_Packet& P, ClientID sender) // Non-Zero means broadc
 		{
 			xrClientData* CL = ID_to_client(sender);
 			if (CL) CL->net_Ready = TRUE;
-			if (SV_Client) SendTo(SV_Client->ID, P, net_flags(TRUE, TRUE));
+
+			bool remote_level = false;
+			if (SV_Client && CL && CL->ID != SV_Client->ID)
+			{
+				u8 host_lvl = GetClientLevelID(SV_Client);
+				u8 client_lvl = GetClientLevelID(CL);
+				if (host_lvl != 0xFF && client_lvl != 0xFF && host_lvl != client_lvl)
+				{
+					remote_level = true;
+				}
+			}
+
+			if (!remote_level && SV_Client)
+				SendTo(SV_Client->ID, P, net_flags(TRUE, TRUE));
+
 #ifdef DEBUG
 			VERIFY(verify_entities());
 #endif
@@ -579,7 +742,7 @@ u32 xrServer::OnMessage(NET_Packet& P, ClientID sender) // Non-Zero means broadc
 		{
 			if (game->change_level(P, sender))
 			{
-				SendBroadcast(BroadcastCID, P, net_flags(TRUE,TRUE));
+				SendTo(sender, P, net_flags(TRUE,TRUE));
 			}
 #ifdef DEBUG
 			VERIFY(verify_entities());
@@ -814,6 +977,56 @@ void xrServer::SendTo_LL(ClientID ID, void* data, u32 size, u32 dwFlags, u32 dwT
 
 void xrServer::SendBroadcast(ClientID exclude, NET_Packet& P, u32 dwFlags)
 {
+	NET_Packet temp_P;
+	temp_P.construct(P.B.data, P.B.count);
+	u16 msg_type;
+	temp_P.r_begin(msg_type);
+
+	if (msg_type == M_SPAWN && temp_P.r_elapsed() >= 20)
+	{
+		shared_str s_name;
+		temp_P.r_stringZ(s_name);
+		shared_str s_name_replace;
+		temp_P.r_stringZ(s_name_replace);
+		if (temp_P.r_elapsed() >= 30) // remaining safety check
+		{
+			u8 dummy_u8_1 = temp_P.r_u8();
+			u8 dummy_u8_2 = temp_P.r_u8();
+			Fvector o_Position = temp_P.r_vec3();
+			Fvector o_Angle = temp_P.r_vec3();
+			u16 respawn_time = temp_P.r_u16();
+			u16 entity_id = temp_P.r_u16();
+
+			CSE_Abstract* E = ID_to_entity(entity_id);
+			if (E)
+			{
+				u8 obj_lvl = GetEntityLevelID(E);
+				if (obj_lvl != 0xFF)
+				{
+					SendBroadcastLevel(exclude, obj_lvl, P, dwFlags);
+					return;
+				}
+			}
+		}
+	}
+	else if (msg_type == M_EVENT && temp_P.r_elapsed() >= 8)
+	{
+		u32 timestamp = temp_P.r_u32();
+		u16 event_type = temp_P.r_u16();
+		u16 destination_id = temp_P.r_u16();
+
+		CSE_Abstract* E = ID_to_entity(destination_id);
+		if (E)
+		{
+			u8 obj_lvl = GetEntityLevelID(E);
+			if (obj_lvl != 0xFF)
+			{
+				SendBroadcastLevel(exclude, obj_lvl, P, dwFlags);
+				return;
+			}
+		}
+	}
+
 	struct ClientExcluderPredicate
 	{
 		ClientID id_to_exclude;

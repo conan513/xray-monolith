@@ -14,8 +14,9 @@
 
 game_sv_Single::game_sv_Single()
 {
-	m_alife_simulator = NULL;
-	m_type = eGameIDSingle;
+	m_alife_simulator  = NULL;
+	m_type             = eGameIDSingle;
+	m_coop_autosave_timer = 0;
 };
 
 game_sv_Single::~game_sv_Single()
@@ -172,13 +173,23 @@ void game_sv_Single::OnDetach(u16 eid_who, u16 eid_what)
 void game_sv_Single::Update()
 {
 	inherited::Update();
-	/*	switch(phase) 	{
-			case GAME_PHASE_PENDING : {
-				OnRoundStart();
-				switch_Phase(GAME_PHASE_INPROGRESS);
-				break;
-			}
-		}*/
+
+	// Co-op autosave: 5 percenként elmenti a világ állapotát
+	if (ai().get_alife() && ai().alife().initialized())
+	{
+		u32 now = Device.dwTimeGlobal;
+		if (m_coop_autosave_timer == 0)
+		{
+			// Első futás: rögzítsük az aktuális időt
+			m_coop_autosave_timer = now;
+		}
+		else if ((now - m_coop_autosave_timer) >= COOP_AUTOSAVE_INTERVAL_MS)
+		{
+			Msg("* [COOP] Autosaving world state as '" COOP_MASTER_SAVE_NAME "'...");
+			alife().save(COOP_MASTER_SAVE_NAME, false);
+			m_coop_autosave_timer = now;
+		}
+	}
 }
 
 ALife::_TIME_ID game_sv_Single::GetStartGameTime()
@@ -244,16 +255,37 @@ void game_sv_Single::save_game(NET_Packet& net_packet, ClientID sender)
 	if (!ai().get_alife())
 		return;
 
-	alife().save(net_packet);
+	// Co-op: a kliens által küldött mentésnév figyelmen kívül marad.
+	// A NET_Packet-ből kiolvasunk mindent, hogy ne maradjon törött állapotban.
+	shared_str ignored_name;
+	net_packet.r_stringZ(ignored_name);
+	/* update_flag = */ net_packet.r_u8();
+
+	Msg("* [COOP] Saving world as '" COOP_MASTER_SAVE_NAME "' (client requested: '%s')...", *ignored_name);
+	alife().save(COOP_MASTER_SAVE_NAME, false);
+
+	// Az autosave órát is reseteljük, mert most frissen mentettünk
+	m_coop_autosave_timer = Device.dwTimeGlobal;
 }
 
 bool game_sv_Single::load_game(NET_Packet& net_packet, ClientID sender)
 {
 	if (!ai().get_alife())
 		return (inherited::load_game(net_packet, sender));
-	shared_str game_name;
-	net_packet.r_stringZ(game_name);
-	return (alife().load_game(*game_name, true));
+
+	// Co-op: mindig a master save-t töltjük be.
+	shared_str ignored_name;
+	net_packet.r_stringZ(ignored_name);
+
+	Msg("* [COOP] Loading master save '" COOP_MASTER_SAVE_NAME "' (client requested: '%s')...", *ignored_name);
+	bool result = alife().load_game(COOP_MASTER_SAVE_NAME, true);
+
+	if (result)
+	{
+		// Sikeres betöltés után reseteljük az autosave timer-t
+		m_coop_autosave_timer = Device.dwTimeGlobal;
+	}
+	return result;
 }
 
 void game_sv_Single::reload_game(NET_Packet& net_packet, ClientID sender)

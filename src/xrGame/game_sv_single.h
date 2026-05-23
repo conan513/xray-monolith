@@ -2,6 +2,11 @@
 
 #include "game_sv_base.h"
 
+// Co-op multiplayer: minden mentés erre a névre kerül
+#define COOP_MASTER_SAVE_NAME   "coop_world"
+// Automatikus mentés intervalluma: 5 perc (milliszekundumban)
+#define COOP_AUTOSAVE_INTERVAL_MS (5u * 60u * 1000u)
+
 class xrServer;
 class CALifeSimulator;
 
@@ -12,6 +17,9 @@ private:
 
 protected:
 	CALifeSimulator* m_alife_simulator;
+
+	// Co-op autosave: Device.dwTimeGlobal értéke az utolsó mentéskor (ms)
+	u32              m_coop_autosave_timer;
 
 public:
 	game_sv_Single();

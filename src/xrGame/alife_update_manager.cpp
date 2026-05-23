@@ -215,14 +215,16 @@ bool CALifeUpdateManager::change_level(NET_Packet& net_packet)
 		holder->o_Angle = graph().actor()->o_Angle;
 	}
 
-	string256 autoave_name;
-	strconcat(sizeof(autoave_name), autoave_name, Core.UserName, " - ", "autosave");
+	// Co-op: mindig a master save n\u00e9vvel mentj\u00fck a vil\u00e1got p\u00e1lyav\u00e1lt\u00e1skor is,
+	// ne hozzon l\u00e9tre felesleges felhaszn\u00e1l\u00f3nkb\u00f3l k\u00e9pzett mentf\u00e1jlokat.
+	const char* autosave_name = "coop_world";
 	LPCSTR temp0 = strstr(**m_server_command_line, "/");
 	VERIFY(temp0);
 	string256 temp;
-	*m_server_command_line = strconcat(sizeof(temp), temp, autoave_name, temp0);
+	*m_server_command_line = strconcat(sizeof(temp), temp, autosave_name, temp0);
 
-	save(autoave_name);
+	Msg("* [COOP] Saving world as 'coop_world' before level transition...");
+	save(autosave_name, false);
 
 	graph().actor()->m_tGraphID = safe_graph_vertex_id;
 	graph().actor()->m_tNodeID = safe_level_vertex_id;

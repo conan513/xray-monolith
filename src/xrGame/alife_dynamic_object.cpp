@@ -157,7 +157,49 @@ void CSE_ALifeDynamicObject::try_switch_online()
 		return;
 	}
 
-	if (alife().graph().actor()->o_Position.distance_to(o_Position) > alife().online_distance())
+	float min_distance = flt_max;
+	if (ai().get_alife())
+	{
+		u8 obj_level_id = ai().game_graph().vertex(this->m_tGraphID)->level_id();
+
+		struct DistanceCalculator
+		{
+			CSE_ALifeDynamicObject* m_obj;
+			u8                      m_obj_level;
+			float*                  m_min_dist;
+
+			DistanceCalculator(CSE_ALifeDynamicObject* obj, u8 lvl, float* minDist)
+				: m_obj(obj), m_obj_level(lvl), m_min_dist(minDist)
+			{
+			}
+
+			void operator()(IClient* client)
+			{
+				xrClientData* CL = static_cast<xrClientData*>(client);
+				if (CL && CL->flags.bConnected && CL->net_Accepted && CL->owner)
+				{
+					CSE_ALifeObject* actor = smart_cast<CSE_ALifeObject*>(CL->owner);
+					if (actor)
+					{
+						u8 actor_level_id = ai().game_graph().vertex(actor->m_tGraphID)->level_id();
+						if (m_obj_level == actor_level_id)
+						{
+							float dist = actor->o_Position.distance_to(m_obj->o_Position);
+							if (dist < *m_min_dist)
+							{
+								*m_min_dist = dist;
+							}
+						}
+					}
+				}
+			}
+		};
+
+		DistanceCalculator calc(this, obj_level_id, &min_distance);
+		alife().server().net_players.ForEachClientDo(calc);
+	}
+
+	if (min_distance > alife().online_distance())
 	{
 		on_failed_switch_online();
 		return;
@@ -177,7 +219,49 @@ void CSE_ALifeDynamicObject::try_switch_offline()
 		return;
 	}
 
-	if (alife().graph().actor()->o_Position.distance_to(o_Position) <= alife().offline_distance())
+	float min_distance = flt_max;
+	if (ai().get_alife())
+	{
+		u8 obj_level_id = ai().game_graph().vertex(this->m_tGraphID)->level_id();
+
+		struct DistanceCalculator
+		{
+			CSE_ALifeDynamicObject* m_obj;
+			u8                      m_obj_level;
+			float*                  m_min_dist;
+
+			DistanceCalculator(CSE_ALifeDynamicObject* obj, u8 lvl, float* minDist)
+				: m_obj(obj), m_obj_level(lvl), m_min_dist(minDist)
+			{
+			}
+
+			void operator()(IClient* client)
+			{
+				xrClientData* CL = static_cast<xrClientData*>(client);
+				if (CL && CL->flags.bConnected && CL->net_Accepted && CL->owner)
+				{
+					CSE_ALifeObject* actor = smart_cast<CSE_ALifeObject*>(CL->owner);
+					if (actor)
+					{
+						u8 actor_level_id = ai().game_graph().vertex(actor->m_tGraphID)->level_id();
+						if (m_obj_level == actor_level_id)
+						{
+							float dist = actor->o_Position.distance_to(m_obj->o_Position);
+							if (dist < *m_min_dist)
+							{
+								*m_min_dist = dist;
+							}
+						}
+					}
+				}
+			}
+		};
+
+		DistanceCalculator calc(this, obj_level_id, &min_distance);
+		alife().server().net_players.ForEachClientDo(calc);
+	}
+
+	if (min_distance <= alife().offline_distance())
 		return;
 
 	alife().switch_offline(this);
