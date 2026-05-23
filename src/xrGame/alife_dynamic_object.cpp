@@ -196,7 +196,7 @@ void CSE_ALifeDynamicObject::try_switch_online()
 		};
 
 		DistanceCalculator calc(this, obj_level_id, &min_distance);
-		alife().server().net_players.ForEachClientDo(calc);
+		alife().server().ForEachClientDo(calc);
 	}
 
 	if (min_distance > alife().online_distance())
@@ -258,7 +258,7 @@ void CSE_ALifeDynamicObject::try_switch_offline()
 		};
 
 		DistanceCalculator calc(this, obj_level_id, &min_distance);
-		alife().server().net_players.ForEachClientDo(calc);
+		alife().server().ForEachClientDo(calc);
 	}
 
 	if (min_distance <= alife().offline_distance())
