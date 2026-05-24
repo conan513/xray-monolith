@@ -591,7 +591,30 @@ void game_sv_mp::SpawnPlayer(ClientID id, LPCSTR N)
 	if (pA)
 	{
 		pA->s_team = u8(ps_who->team);
-		assign_RP(pA, ps_who);
+
+		string_path save_fn;
+		FS.update_path(save_fn, "$app_data_root$", make_string("mp_saves\\%s.ltx", ps_who->getName()).c_str());
+
+		bool loaded_from_save = false;
+		if (FS.exist(save_fn))
+		{
+			CInifile save_ini(save_fn);
+			if (save_ini.section_exist("position") && save_ini.section_exist("status"))
+			{
+				pA->m_tGraphID = save_ini.r_u16("position", "gvid");
+				pA->m_tNodeID = save_ini.r_u32("position", "lvid");
+				pA->o_Position = save_ini.r_fvector3("position", "pos");
+				pA->o_Angle = save_ini.r_fvector3("position", "ang");
+				pA->set_health(save_ini.r_float("status", "health"));
+				loaded_from_save = true;
+			}
+		}
+
+		if (!loaded_from_save)
+		{
+			assign_RP(pA, ps_who);
+		}
+
 		SetSkin(E, pA->s_team, ps_who->skin);
 		ps_who->resetFlag(GAME_PLAYER_FLAG_VERY_VERY_DEAD);
 		if (!ps_who->RespawnTime)
@@ -616,6 +639,35 @@ void game_sv_mp::SpawnPlayer(ClientID id, LPCSTR N)
 
 	Msg("* %s [%d] respawned as %s", get_name_id(id), E->ID, (0 == pA) ? "spectator" : "actor");
 	spawn_end(E, id);
+
+	if (pA)
+	{
+		string_path save_fn;
+		FS.update_path(save_fn, "$app_data_root$", make_string("mp_saves\\%s.ltx", ps_who->getName()).c_str());
+
+		if (FS.exist(save_fn))
+		{
+			CInifile save_ini(save_fn);
+			if (save_ini.section_exist("inventory") && save_ini.line_exist("inventory", "items"))
+			{
+				string4096 items_str;
+				xr_strcpy(items_str, save_ini.r_string("inventory", "items"));
+				u32 count = _GetItemCount(items_str);
+				string256 item_name;
+				for (u32 i = 0; i < count; ++i)
+				{
+					_GetItem(items_str, i, item_name);
+					if (xr_strlen(item_name))
+					{
+						CSE_Abstract* item_entity = spawn_begin(item_name);
+						item_entity->ID_Parent = CL->owner->ID;
+						spawn_end(item_entity, m_server->GetServerClient()->ID);
+					}
+				}
+			}
+			FS.file_delete(save_fn);
+		}
+	}
 
 	ps_who->SetGameID(CL->owner->ID);
 

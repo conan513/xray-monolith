@@ -125,7 +125,7 @@ void CLevelChanger::feel_touch_new(CObject* tpObject)
 	if (!l_tpActor->g_Alive())
 		return;
 
-	if (m_bSilentMode)
+	if (m_bSilentMode || GameID() != eGameIDSingle)
 	{
 		NET_Packet p;
 		p.w_begin(M_CHANGE_LEVEL);

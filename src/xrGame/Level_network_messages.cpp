@@ -329,6 +329,26 @@ void CLevel::ClientReceive()
 						}
 					}
 				}
+				else if (GameID() != eGameIDSingle && m_type == M_CHANGE_LEVEL)
+				{
+					string256 target_address;
+					string256 target_level;
+					P->r_stringZ(target_address);
+					P->r_stringZ(target_level);
+
+					const char* options_part = strchr(m_caClientOptions.c_str(), '/');
+					string1024 new_client_options;
+					if (options_part)
+						xr_sprintf(new_client_options, "%s%s", target_address, options_part);
+					else
+						xr_strcpy(new_client_options, target_address);
+
+					m_caClientOptions = new_client_options;
+
+					string1024 new_server_options;
+					xr_sprintf(new_server_options, "%s/deathmatch", target_level);
+					m_caServerOptions = new_server_options;
+				}
 				MakeReconnect();
 			}
 			break;

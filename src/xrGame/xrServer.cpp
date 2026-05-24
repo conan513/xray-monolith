@@ -740,9 +740,69 @@ u32 xrServer::OnMessage(NET_Packet& P, ClientID sender) // Non-Zero means broadc
 		break;
 	case M_CHANGE_LEVEL:
 		{
-			if (game->change_level(P, sender))
+			if (GameID() != eGameIDSingle)
 			{
-				SendTo(sender, P, net_flags(TRUE,TRUE));
+				GameGraph::_GRAPH_ID m_game_vertex_id;
+				u32 m_level_vertex_id;
+				Fvector m_position;
+				Fvector m_angles;
+
+				P.r(&m_game_vertex_id, sizeof(m_game_vertex_id));
+				P.r(&m_level_vertex_id, sizeof(m_level_vertex_id));
+				P.r_vec3(m_position);
+				P.r_vec3(m_angles);
+
+				u8 target_level_id = ai().game_graph().vertex(m_game_vertex_id)->level_id();
+				LPCSTR target_level_name = *ai().game_graph().header().level(target_level_id).name();
+
+				string_path cfg_fn;
+				FS.update_path(cfg_fn, "$game_config$", "multiplayer_levels.ltx");
+				CInifile ini(cfg_fn);
+				
+				if (ini.section_exist("levels") && ini.line_exist("levels", target_level_name))
+				{
+					LPCSTR target_address = ini.r_string("levels", target_level_name);
+
+					xrClientData* CL = ID_to_client(sender);
+					if (CL && CL->owner)
+					{
+						string_path save_fn;
+						FS.update_path(save_fn, "$app_data_root$", make_string("mp_saves\\%s.ltx", CL->ps->getName()).c_str());
+						
+						CInifile save_ini(save_fn, FALSE, FALSE, TRUE);
+						save_ini.w_float("status", "health", CL->owner->get_health());
+						save_ini.w_u16("position", "gvid", m_game_vertex_id);
+						save_ini.w_u32("position", "lvid", m_level_vertex_id);
+						save_ini.w_fvector3("position", "pos", m_position);
+						save_ini.w_fvector3("position", "ang", m_angles);
+
+						xr_string items = "";
+						xrS_entities::iterator I = entities.begin(), E = entities.end();
+						for (; I != E; ++I)
+						{
+							if (I->second->ID_Parent == CL->owner->ID)
+							{
+								if (items.length() > 0) items += ",";
+								items += I->second->s_name.c_str();
+							}
+						}
+						save_ini.w_string("inventory", "items", items.c_str());
+						save_ini.save_as(save_fn);
+					}
+
+					NET_Packet response;
+					response.w_begin(M_CHANGE_LEVEL);
+					response.w_stringZ(target_address);
+					response.w_stringZ(target_level_name);
+					SendTo(sender, response, net_flags(TRUE, TRUE));
+				}
+			}
+			else
+			{
+				if (game->change_level(P, sender))
+				{
+					SendTo(sender, P, net_flags(TRUE,TRUE));
+				}
 			}
 #ifdef DEBUG
 			VERIFY(verify_entities());
