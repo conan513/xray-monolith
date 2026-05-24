@@ -159,11 +159,11 @@ void dxRenderDeviceRender::OnDeviceCreate(LPCSTR shName)
 	Device.Statistic->OnDeviceCreate();
 
 	//#ifndef DEDICATED_SERVER
+	m_WireShader.create("editor\\wire");
+	m_SelectionShader.create("editor\\selection");
+
 	if (!g_dedicated_server)
 	{
-		m_WireShader.create("editor\\wire");
-		m_SelectionShader.create("editor\\selection");
-
 		DUImpl.OnDeviceCreate();
 	}
 	//#endif
