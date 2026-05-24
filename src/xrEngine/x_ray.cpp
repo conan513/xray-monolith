@@ -623,6 +623,36 @@ void Startup()
 
 	// ...command line for auto start
 	{
+		LPCSTR pServer = strstr(Core.Params, "-server ");
+		LPCSTR pStart = strstr(Core.Params, "-start ");
+		if (!pStart && pServer)
+		{
+			pServer += xr_strlen("-server ");
+			while (*pServer == ' ') ++pServer;
+			if (*pServer != '\0')
+			{
+				bool quoted = (*pServer == '"');
+				if (quoted) ++pServer;
+				const char* end = quoted ? strchr(pServer, '"') : strchr(pServer, ' ');
+				if (!end) end = pServer + xr_strlen(pServer);
+
+				string512 server_opts;
+				u32 len = (u32)(end - pServer);
+				if (len > 0 && len < sizeof(server_opts))
+				{
+					strncpy_s(server_opts, sizeof(server_opts), pServer, len);
+					server_opts[len] = '\0';
+
+					// Now construct the start command
+					string1024 cmd;
+					xr_sprintf(cmd, sizeof(cmd), "start server(%s) client(%s)", server_opts, g_dedicated_server ? "dedicated" : "localhost");
+					Msg("* Auto-starting server from -server CLI parameter: %s", cmd);
+					Console->Execute(cmd);
+				}
+			}
+		}
+	}
+	{
 		LPCSTR pStartup = strstr(Core.Params, "-start ");
 		if (pStartup) Console->Execute(pStartup + 1);
 	}
@@ -958,10 +988,23 @@ int APIENTRY WinMain_impl(HINSTANCE hInstance,
                           char* lpCmdLine,
                           int nCmdShow)
 {
+#ifndef DEDICATED_SERVER
+	if (lpCmdLine)
+	{
+		char lpCmdLine_lower[1024] = {0};
+		strncpy_s(lpCmdLine_lower, sizeof(lpCmdLine_lower), lpCmdLine, _TRUNCATE);
+		_strlwr(lpCmdLine_lower);
+		if (strstr(lpCmdLine_lower, "-dedicated"))
+		{
+			g_dedicated_server = true;
+		}
+	}
+#endif
+
 #ifdef DEDICATED_SERVER
     Debug._initialize(true);
 #else // DEDICATED_SERVER
-	Debug._initialize(false);
+	Debug._initialize(g_dedicated_server);
 #endif // DEDICATED_SERVER
 
 	if (!IsDebuggerPresent())
