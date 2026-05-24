@@ -766,28 +766,32 @@ u32 xrServer::OnMessage(NET_Packet& P, ClientID sender) // Non-Zero means broadc
 					xrClientData* CL = ID_to_client(sender);
 					if (CL && CL->owner)
 					{
-						string_path save_fn;
-						FS.update_path(save_fn, "$app_data_root$", make_string("mp_saves\\%s.ltx", CL->ps->getName()).c_str());
-						
-						CInifile save_ini(save_fn, FALSE, FALSE, TRUE);
-						save_ini.w_float("status", "health", CL->owner->get_health());
-						save_ini.w_u16("position", "gvid", m_game_vertex_id);
-						save_ini.w_u32("position", "lvid", m_level_vertex_id);
-						save_ini.w_fvector3("position", "pos", m_position);
-						save_ini.w_fvector3("position", "ang", m_angles);
-
-						xr_string items = "";
-						xrS_entities::iterator I = entities.begin(), E = entities.end();
-						for (; I != E; ++I)
+						CSE_ALifeCreatureActor* actor = smart_cast<CSE_ALifeCreatureActor*>(CL->owner);
+						if (actor)
 						{
-							if (I->second->ID_Parent == CL->owner->ID)
+							string_path save_fn;
+							FS.update_path(save_fn, "$app_data_root$", make_string("mp_saves\\%s.ltx", CL->ps->getName()).c_str());
+							
+							CInifile save_ini(save_fn, FALSE, FALSE, TRUE);
+							save_ini.w_float("status", "health", actor->get_health());
+							save_ini.w_u16("position", "gvid", m_game_vertex_id);
+							save_ini.w_u32("position", "lvid", m_level_vertex_id);
+							save_ini.w_fvector3("position", "pos", m_position);
+							save_ini.w_fvector3("position", "ang", m_angles);
+
+							xr_string items = "";
+							xrS_entities::iterator I = entities.begin(), E = entities.end();
+							for (; I != E; ++I)
 							{
-								if (items.length() > 0) items += ",";
-								items += I->second->s_name.c_str();
+								if (I->second->ID_Parent == CL->owner->ID)
+								{
+									if (items.length() > 0) items += ",";
+									items += I->second->s_name.c_str();
+								}
 							}
+							save_ini.w_string("inventory", "items", items.c_str());
+							save_ini.save_as(save_fn);
 						}
-						save_ini.w_string("inventory", "items", items.c_str());
-						save_ini.save_as(save_fn);
 					}
 
 					NET_Packet response;
