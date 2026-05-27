@@ -241,7 +241,10 @@ PROTECT_API void InitConsole()
 #else
 	// else
 	{
-		Console = xr_new<CConsole>();
+		if (g_dedicated_server)
+			Console = xr_new<CTextConsole>();
+		else
+			Console = xr_new<CConsole>();
 	}
 #endif
 	Console->Initialize();
