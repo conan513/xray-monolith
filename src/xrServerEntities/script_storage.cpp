@@ -605,6 +605,8 @@ void CScriptStorage::print_stack()
 #endif //-DEBUG
 
 	lua_State* L = lua();
+	if (!L)
+		return;
 	lua_Debug l_tDebugInfo;
 	for (int i = 0; lua_getstack(L, i, &l_tDebugInfo); ++i)
 	{
