@@ -327,6 +327,7 @@
     </Link>
     <Manifest>
       <AdditionalManifestFiles>$(SolutionDir)xrEngine\as-invoker-manifest-part.xml;%(AdditionalManifestFiles)</AdditionalManifestFiles>
+      <EmbedManifest>false</EmbedManifest>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseR2-AVX|x64'">
@@ -368,6 +369,7 @@
     </Link>
     <Manifest>
       <AdditionalManifestFiles>$(SolutionDir)xrEngine\as-invoker-manifest-part.xml;%(AdditionalManifestFiles)</AdditionalManifestFiles>
+      <EmbedManifest>false</EmbedManifest>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseR4|x64'">
@@ -409,6 +411,7 @@
     </Link>
     <Manifest>
       <AdditionalManifestFiles>$(SolutionDir)xrEngine\as-invoker-manifest-part.xml;%(AdditionalManifestFiles)</AdditionalManifestFiles>
+      <EmbedManifest>false</EmbedManifest>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ProfiledDX11|x64'">
@@ -448,6 +451,7 @@
     </Link>
     <Manifest>
       <AdditionalManifestFiles>$(SolutionDir)xrEngine\as-invoker-manifest-part.xml;%(AdditionalManifestFiles)</AdditionalManifestFiles>
+      <EmbedManifest>false</EmbedManifest>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='VerifiedDX11|x64'">
@@ -492,6 +496,7 @@
     </Link>
     <Manifest>
       <AdditionalManifestFiles>$(SolutionDir)xrEngine\as-invoker-manifest-part.xml;%(AdditionalManifestFiles)</AdditionalManifestFiles>
+      <EmbedManifest>false</EmbedManifest>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='VerifiedDX9|x64'">
@@ -536,6 +541,7 @@
     </Link>
     <Manifest>
       <AdditionalManifestFiles>$(SolutionDir)xrEngine\as-invoker-manifest-part.xml;%(AdditionalManifestFiles)</AdditionalManifestFiles>
+      <EmbedManifest>false</EmbedManifest>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Verified|x64'">
@@ -580,6 +586,7 @@
     </Link>
     <Manifest>
       <AdditionalManifestFiles>$(SolutionDir)xrEngine\as-invoker-manifest-part.xml;%(AdditionalManifestFiles)</AdditionalManifestFiles>
+      <EmbedManifest>false</EmbedManifest>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseR4-AVX|x64'">
@@ -621,6 +628,7 @@
     </Link>
     <Manifest>
       <AdditionalManifestFiles>$(SolutionDir)xrEngine\as-invoker-manifest-part.xml;%(AdditionalManifestFiles)</AdditionalManifestFiles>
+      <EmbedManifest>false</EmbedManifest>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseR3|x64'">
@@ -662,6 +670,7 @@
     </Link>
     <Manifest>
       <AdditionalManifestFiles>$(SolutionDir)xrEngine\as-invoker-manifest-part.xml;%(AdditionalManifestFiles)</AdditionalManifestFiles>
+      <EmbedManifest>false</EmbedManifest>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseR3-AVX|x64'">
@@ -703,6 +712,7 @@
     </Link>
     <Manifest>
       <AdditionalManifestFiles>$(SolutionDir)xrEngine\as-invoker-manifest-part.xml;%(AdditionalManifestFiles)</AdditionalManifestFiles>
+      <EmbedManifest>false</EmbedManifest>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseR1|x64'">
@@ -744,6 +754,7 @@
     </Link>
     <Manifest>
       <AdditionalManifestFiles>$(SolutionDir)xrEngine\as-invoker-manifest-part.xml;%(AdditionalManifestFiles)</AdditionalManifestFiles>
+      <EmbedManifest>false</EmbedManifest>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='VerifiedDX8|x64'">
@@ -788,6 +799,7 @@
     </Link>
     <Manifest>
       <AdditionalManifestFiles>$(SolutionDir)xrEngine\as-invoker-manifest-part.xml;%(AdditionalManifestFiles)</AdditionalManifestFiles>
+      <EmbedManifest>false</EmbedManifest>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseR1-AVX|x64'">
@@ -829,6 +841,7 @@
     </Link>
     <Manifest>
       <AdditionalManifestFiles>$(SolutionDir)xrEngine\as-invoker-manifest-part.xml;%(AdditionalManifestFiles)</AdditionalManifestFiles>
+      <EmbedManifest>false</EmbedManifest>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>

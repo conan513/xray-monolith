@@ -528,26 +528,29 @@ void CRenderDevice::on_idle()
 #endif // ECO_RENDER END
 
 #ifndef DEDICATED_SERVER
-	Statistic->RenderTOTAL_Real.FrameStart();
-	Statistic->RenderTOTAL_Real.Begin();
-
-	if (b_is_Active && Begin())
+	if (!g_dedicated_server)
 	{
-		START_PROFILE("Process seqRender");
-		seqRender.Process(rp_Render);
-		STOP_PROFILE;
+		Statistic->RenderTOTAL_Real.FrameStart();
+		Statistic->RenderTOTAL_Real.Begin();
 
-		if (psDeviceFlags.test(rsCameraPos) || psDeviceFlags.test(rsStatistic) || Statistic->errors.size())
+		if (b_is_Active && Begin())
 		{
-			PROF_EVENT("Draw statistics");
-			Statistic->Show();
-		}
+			START_PROFILE("Process seqRender");
+			seqRender.Process(rp_Render);
+			STOP_PROFILE;
 
-		End();
+			if (psDeviceFlags.test(rsCameraPos) || psDeviceFlags.test(rsStatistic) || Statistic->errors.size())
+			{
+				PROF_EVENT("Draw statistics");
+				Statistic->Show();
+			}
+
+			End();
+		}
+		Statistic->RenderTOTAL_Real.End();
+		Statistic->RenderTOTAL_Real.FrameEnd();
+		Statistic->RenderTOTAL.accum = Statistic->RenderTOTAL_Real.accum;
 	}
-	Statistic->RenderTOTAL_Real.End();
-	Statistic->RenderTOTAL_Real.FrameEnd();
-	Statistic->RenderTOTAL.accum = Statistic->RenderTOTAL_Real.accum;
 #endif // #ifndef DEDICATED_SERVER
 	Device.isRendering = false;
 

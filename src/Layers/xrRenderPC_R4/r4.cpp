@@ -529,11 +529,16 @@ void CRender::create()
 
 	m_bMakeAsyncSS = false;
 
-	Target = xr_new<CRenderTarget>(); // Main target
+	if (!g_dedicated_server)
+		Target = xr_new<CRenderTarget>(); // Main target
+	else
+		Target = nullptr;
 
 	Models = xr_new<CModelPool>();
 	PSLibrary.OnCreate();
-	HWOCC.occq_create(occq_size);
+
+	if (!g_dedicated_server)
+		HWOCC.occq_create(occq_size);
 
 	rmNormal();
 	marker = 0;
@@ -553,22 +558,27 @@ void CRender::create()
 	HW.pContext->End(q_sync_point[0]);
 
 	::PortalTraverser.initialize();
-	FluidManager.Initialize(70, 70, 70);
-	//	FluidManager.Initialize( 100, 100, 100 );
-	FluidManager.SetScreenSize(Device.dwWidth, Device.dwHeight);
+	if (!g_dedicated_server)
+	{
+		FluidManager.Initialize(70, 70, 70);
+		//	FluidManager.Initialize( 100, 100, 100 );
+		FluidManager.SetScreenSize(Device.dwWidth, Device.dwHeight);
+	}
 }
 
 void CRender::destroy()
 {
 	m_bMakeAsyncSS = false;
-	FluidManager.Destroy();
+	if (!g_dedicated_server)
+		FluidManager.Destroy();
 	::PortalTraverser.destroy();
 	//_RELEASE					(q_sync_point[1]);
 	//_RELEASE					(q_sync_point[0]);
 	for (u32 i = 0; i < HW.Caps.iGPUNum; ++i)
 	_RELEASE(q_sync_point[i]);
 
-	HWOCC.occq_destroy();
+	if (!g_dedicated_server)
+		HWOCC.occq_destroy();
 	xr_delete(Models);
 	xr_delete(Target);
 	PSLibrary.OnDestroy();
@@ -607,7 +617,8 @@ void CRender::reset_begin()
 	//-AVO
 
 	xr_delete(Target);
-	HWOCC.occq_destroy();
+	if (!g_dedicated_server)
+		HWOCC.occq_destroy();
 	//_RELEASE					(q_sync_point[1]);
 	//_RELEASE					(q_sync_point[0]);
 	for (u32 i = 0; i < HW.Caps.iGPUNum; ++i)
@@ -628,9 +639,13 @@ void CRender::reset_end()
 	//q_sync_point[1]->End();
 	//R_CHK						(HW.pDevice->CreateQuery(D3DQUERYTYPE_EVENT,&q_sync_point[0]));
 	//R_CHK						(HW.pDevice->CreateQuery(D3DQUERYTYPE_EVENT,&q_sync_point[1]));
-	HWOCC.occq_create(occq_size);
+	if (!g_dedicated_server)
+		HWOCC.occq_create(occq_size);
 
-	Target = xr_new<CRenderTarget>();
+	if (!g_dedicated_server)
+		Target = xr_new<CRenderTarget>();
+	else
+		Target = nullptr;
 
 	//AVO: let's reload details while changed details options on vid_restart
 	if (b_loaded && ((dm_current_size != dm_size) || (ps_r__Detail_density != ps_current_detail_density) || (
@@ -641,7 +656,8 @@ void CRender::reset_end()
 	}
 	//-AVO
 
-	FluidManager.SetScreenSize(Device.dwWidth, Device.dwHeight);
+	if (!g_dedicated_server)
+		FluidManager.SetScreenSize(Device.dwWidth, Device.dwHeight);
 
 	// Set this flag true to skip the first render frame,
 	// that some data is not ready in the first frame (for example device camera position)
