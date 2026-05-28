@@ -295,7 +295,9 @@ void CLevel::Send(NET_Packet& P, u32 dwFlags, u32 dwTimeout)
 {
 	if (IsDemoPlayStarted() || IsDemoPlayFinished()) return;
 	// optimize the case when server located in our memory
-	if (psNET_direct_connect)
+	// On dedicated server, always use in-memory delivery for the local embedded client
+	// (bypasses DirectPlay which is never initialized in dedicated mode)
+	if (psNET_direct_connect || g_dedicated_server)
 	{
 		ClientID _clid;
 		_clid.set(1);

@@ -63,6 +63,22 @@ bool CLevel::net_start_client2()
 			Server->Update();
 		}
 	}
+	else if (g_dedicated_server)
+	{
+		// Dedicated server: bypass DirectPlay completely.
+		// DirectPlay (IDirectPlay8Client) is never initialized in headless mode;
+		// any attempt to call NET->Connect() fails with ERROR_INVALID_PARAMETER (87).
+		// Instead, register a lightweight in-memory client (same as single-player direct connect)
+		// and mark the connection as already completed so all subsequent wait loops exit immediately.
+		Server->create_direct_client();
+		m_bConnectResultReceived = true;
+		m_bConnectResult         = true;
+		net_Connected            = EnmConnectionCompleted;
+		net_Syncronised          = TRUE;
+		connected_to_server      = TRUE;
+		Msg("* Dedicated server: local embedded client registered (DirectPlay bypassed)");
+		return true;
+	}
 
 	connected_to_server = Connect2Server(*m_caClientOptions);
 
@@ -85,13 +101,15 @@ bool CLevel::net_start_client3()
 		LPCSTR level_ver = NULL;
 		LPCSTR download_url = NULL;
 
-		if (psNET_direct_connect) //single
+		if (psNET_direct_connect || g_dedicated_server) //single or dedicated
 		{
+			// For dedicated servers, m_game_description was never populated via DirectPlay enum;
+			// resolve name and version directly from the server options (same as single-player path).
 			shared_str const& server_options = Server->GetConnectOptions();
-			level_name = name().c_str(); //Server->level_name		(server_options).c_str();
-			level_ver = Server->level_version(server_options).c_str(); //1.0
+			level_name = name().c_str(); // map_data.m_name set in net_start1
+			level_ver = Server->level_version(server_options).c_str();
 		}
-		else //multiplayer
+		else //multiplayer (real network client)
 		{
 			level_name = get_net_DescriptionData().map_name;
 			level_ver = get_net_DescriptionData().map_version;
@@ -266,8 +284,11 @@ bool CLevel::net_start_client6()
 		}
 
 		//		g_pGamePersistent->LoadTitle		("st_client_synchronising");
-		g_pGamePersistent->LoadTitle();
-		Device.PreCache(60, true, true);
+		if (!g_dedicated_server)
+			g_pGamePersistent->LoadTitle();
+		// Device.PreCache requires an active D3D device — skip on dedicated servers
+		if (!g_dedicated_server)
+			Device.PreCache(60, true, true);
 		net_start_result_total = TRUE;
 	}
 	else

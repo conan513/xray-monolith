@@ -234,15 +234,20 @@ bool CLevel::net_start5()
 {
 	if (net_start_result_total)
 	{
-		NET_Packet NP;
-		NP.w_begin(M_CLIENTREADY);
-		Game().local_player->net_Export(NP, TRUE);
-		Send(NP, net_flags(TRUE,TRUE));
-
-		if (OnClient() && Server)
+		// Dedicated servers have no local human player — Game().local_player is NULL
+		// and sending M_CLIENTREADY from the server-side embedded client is meaningless.
+		if (!g_dedicated_server)
 		{
-			Server->SLS_Clear();
-		};
+			NET_Packet NP;
+			NP.w_begin(M_CLIENTREADY);
+			Game().local_player->net_Export(NP, TRUE);
+			Send(NP, net_flags(TRUE,TRUE));
+
+			if (OnClient() && Server)
+			{
+				Server->SLS_Clear();
+			};
+		}
 	};
 	return true;
 }
