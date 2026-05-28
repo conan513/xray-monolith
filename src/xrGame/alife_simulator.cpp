@@ -31,7 +31,8 @@ void restart_all()
 		return;
 
 	destroy_lua_wpn_params();
-	MainMenu()->DestroyInternal(true);
+	if (MainMenu())
+		MainMenu()->DestroyInternal(true);
 	xr_delete(g_object_factory);
 	ai().script_engine().init();
 

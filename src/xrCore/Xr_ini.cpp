@@ -177,6 +177,7 @@ CInifile::CInifile(LPCSTR szFileName,
 {
 	if (szFileName && strstr(szFileName, "system"))
 		Msg("-----loading %s", szFileName);
+	Msg("[CInifile debug] Constructor start: %s, bLoad=%d", szFileName ? szFileName : "null", bLoad);
 
 	m_file_name[0] = 0;
 	m_flags.zero();
@@ -462,6 +463,7 @@ void CInifile::LTXLoad (
 #endif
 	)
 {
+	Msg("[CInifile debug] LTXLoad start: path=%s, bIsRootFile=%d, currentFileName=%s, depth=%d", path ? path : "null", bIsRootFile, currentFileName, depth);
 	static shared_str DLTX_DELETE = "DLTX_DELETE";
 	Sect* CurrentBase = 0;
 	Sect* CurrentOverride = 0;
@@ -903,6 +905,7 @@ void CInifile::LTXLoad (
 			xr_delete(CurrentBase);
 		}
 	}
+	Msg("[CInifile debug] LTXLoad end: currentFileName=%s", currentFileName);
 };
 
 CInifile::Items CInifile::MergeSections(
@@ -1300,6 +1303,7 @@ void CInifile::Load(IReader* F, LPCSTR path
 #endif
 )
 {
+	Msg("[CInifile debug] Load start: path=%s", path ? path : "null");
 	R_ASSERT(F);
 	
 	static shared_str DLTX_DELETE = "DLTX_DELETE";
@@ -1330,11 +1334,15 @@ void CInifile::Load(IReader* F, LPCSTR path
 #endif
 	);
 
+	Msg("[CInifile debug] Load: LTXLoad complete. BaseData size: %zu, OverrideData size: %zu", BaseData.size(), OverrideData.size());
+
 	// Sort items by depth and name
 	for (auto& [k, v] : BaseData)
 		SortAndFilterSection(v);
 	for (auto& [k, v] : OverrideData)
 		SortAndFilterSection(v);
+
+	Msg("[CInifile debug] Load: SortAndFilterSection complete.");
 
 	// Merge base and override data together
 	EvaluationsContext Evaluations;
@@ -1417,6 +1425,7 @@ void CInifile::Load(IReader* F, LPCSTR path
 	OverrideParentDataMap.rehash(0);
 	OverrideData.rehash(0);
 	OverrideModifyListData.rehash(0);
+	Msg("[CInifile debug] Load complete");
 }
 
 // demonized: print DLTX override info

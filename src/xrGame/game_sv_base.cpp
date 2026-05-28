@@ -442,6 +442,44 @@ void game_sv_GameState::Create(shared_str& options)
 					}
 				};
 			};
+			if (rpoints[0].empty())
+			{
+				// Second pass fallback: if no game-mode specific spawn points were loaded (e.g. single-player maps)
+				// load any actor spawn point as a fallback.
+				for (int id = 0; O->find_chunk(id); ++id)
+				{
+					RPoint R;
+					u8 team;
+					u8 type;
+					u16 GameType;
+					shared_str rp_profile;
+
+					O->r_fvector3(R.P);
+					O->r_fvector3(R.A);
+					team = O->r_u8();
+					type = O->r_u8();
+					GameType = O->r_u16();
+
+					if (type == rptItemSpawn)
+						O->r_stringZ(rp_profile);
+
+					if (type == rptActorSpawn)
+					{
+						rpoints[0].push_back(R);
+					}
+				}
+			}
+
+			if (rpoints[0].empty())
+			{
+				// Third pass fallback: if there are absolutely no actor spawn points on the map at all,
+				// dynamically register a default spawn point at (0, 0, 0) so the server never crashes.
+				RPoint R;
+				R.P.set(0.0f, 0.0f, 0.0f);
+				R.A.set(0.0f, 0.0f, 0.0f);
+				rpoints[0].push_back(R);
+			}
+
 			O->close();
 		}
 

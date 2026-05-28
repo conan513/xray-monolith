@@ -1826,22 +1826,10 @@ int CApplication::Level_ID(LPCSTR name, LPCSTR ver, bool bSet)
 
 	if (result == -1)
 	{
-		Msg("! [Diagnostic] Level_ID failed for level name: [%s], version: [%s]", name, ver);
-		string_path game_levels_path;
-		FS.update_path(game_levels_path, "$game_levels$", "");
-		Msg("! [Diagnostic] $game_levels$ path points to: [%s]", game_levels_path);
-		Msg("! [Diagnostic] Scanned levels count: [%d]", Levels.size());
-		for (u32 I = 0; I < Levels.size(); ++I)
-		{
-			Msg("! [Diagnostic] Scanned Level [%d]: [%s]", I, Levels[I].folder ? Levels[I].folder : "NULL");
-		}
-
 		string_path temp;
 		strconcat(sizeof(temp), temp, name, "\\", "level.ltx");
-		Msg("! [Diagnostic] Checking if [%s] exists under $game_levels$...", temp);
 		if (FS.exist("$game_levels$", temp))
 		{
-			Msg("! [Diagnostic] -> Found level.ltx! Registering level dynamically.");
 			sLevelInfo LI;
 			string_path folder_path;
 			strconcat(sizeof(folder_path), folder_path, name, "\\");
@@ -1849,10 +1837,6 @@ int CApplication::Level_ID(LPCSTR name, LPCSTR ver, bool bSet)
 			LI.name = 0;
 			Levels.push_back(LI);
 			result = int(Levels.size() - 1);
-		}
-		else
-		{
-			Msg("! [Diagnostic] -> level.ltx NOT found under $game_levels$!");
 		}
 	}
 
