@@ -73,7 +73,7 @@ bool CLevel::net_start_client2()
 		Server->create_direct_client();
 		m_bConnectResultReceived = true;
 		m_bConnectResult         = true;
-		net_Connected            = EnmConnectionCompleted;
+		net_Connected            = (decltype(net_Connected))1; // EnmConnectionCompleted = 1 (private enum in IPureClient)
 		net_Syncronised          = TRUE;
 		connected_to_server      = TRUE;
 		Msg("* Dedicated server: local embedded client registered (DirectPlay bypassed)");
