@@ -1824,6 +1824,22 @@ int CApplication::Level_ID(LPCSTR name, LPCSTR ver, bool bSet)
 		}
 	}
 
+	if (result == -1)
+	{
+		string_path temp;
+		strconcat(sizeof(temp), temp, name, "\\", "level.ltx");
+		if (FS.exist("$game_levels$", temp))
+		{
+			sLevelInfo LI;
+			string_path folder_path;
+			strconcat(sizeof(folder_path), folder_path, name, "\\");
+			LI.folder = xr_strdup(folder_path);
+			LI.name = 0;
+			Levels.push_back(LI);
+			result = int(Levels.size() - 1);
+		}
+	}
+
 	if (bSet && result != -1)
 		Level_Set(result);
 
