@@ -779,9 +779,7 @@ bool CScriptStorage::load_buffer(lua_State* L, LPCSTR caBuffer, size_t tSize, LP
 
 	if (l_iErrorCode)
 	{
-//#ifdef DEBUG
-		if (strstr(Core.Params, "-dbg")) print_output(L,caScriptName,l_iErrorCode);
-//#endif //-DEBUG
+		print_output(L, caScriptName, l_iErrorCode);
 		on_error(L);
 		return (false);
 	}
@@ -1042,9 +1040,7 @@ bool CScriptStorage::do_file(LPCSTR caScriptName, LPCSTR caNameSpaceName)
 #endif // #ifdef USE_DEBUGGER
 	if (l_iErrorCode)
 	{
-//#ifdef DEBUG
-		if (strstr(Core.Params, "-dbg")) print_output(lua(),caScriptName,l_iErrorCode);
-//#endif
+		print_output(lua(), caScriptName, l_iErrorCode);
 		on_error(lua());
 		lua_settop(lua(), start);
 		return (false);
