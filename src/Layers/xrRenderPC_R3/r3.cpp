@@ -837,6 +837,7 @@ void CRender::set_Object(IRenderable* O)
 
 void CRender::rmNear()
 {
+	if (g_dedicated_server) return;
 	IRender_Target* T = getTarget();
 	D3D_VIEWPORT VP = {0, 0, T->get_width(), T->get_height(), 0, 0.02f};
 
@@ -846,6 +847,7 @@ void CRender::rmNear()
 
 void CRender::rmFar()
 {
+	if (g_dedicated_server) return;
 	IRender_Target* T = getTarget();
 	D3D_VIEWPORT VP = {0, 0, T->get_width(), T->get_height(), 0.99999f, 1.f};
 
@@ -855,6 +857,7 @@ void CRender::rmFar()
 
 void CRender::rmNormal()
 {
+	if (g_dedicated_server) return;
 	IRender_Target* T = getTarget();
 	D3D_VIEWPORT VP = {0, 0, T->get_width(), T->get_height(), 0, 1.f};
 
