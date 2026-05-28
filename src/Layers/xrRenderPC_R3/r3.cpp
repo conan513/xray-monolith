@@ -1,4 +1,4 @@
-﻿#include "stdafx.h"
+#include "stdafx.h"
 #include "r3.h"
 #include "../xrRender/fbasicvisual.h"
 #include "../../xrEngine/xr_object.h"
@@ -465,16 +465,19 @@ void CRender::create()
 	qdesc.MiscFlags = 0;
 	qdesc.Query = D3D10_QUERY_EVENT;
 	ZeroMemory(q_sync_point, sizeof(q_sync_point));
-	//R_CHK						(HW.pDevice->CreateQuery(&qdesc,&q_sync_point[0]));
-	//R_CHK						(HW.pDevice->CreateQuery(&qdesc,&q_sync_point[1]));
-	//	Prevent error on first get data
-	//q_sync_point[0]->End();
-	//q_sync_point[1]->End();
-	//R_CHK						(HW.pDevice->CreateQuery(D3DQUERYTYPE_EVENT,&q_sync_point[0]));
-	//R_CHK						(HW.pDevice->CreateQuery(D3DQUERYTYPE_EVENT,&q_sync_point[1]));
-	for (u32 i = 0; i < HW.Caps.iGPUNum; ++i)
-		R_CHK(HW.pDevice->CreateQuery(&qdesc,&q_sync_point[i]));
-	q_sync_point[0]->End();
+	if (!g_dedicated_server)
+	{
+		//R_CHK						(HW.pDevice->CreateQuery(&qdesc,&q_sync_point[0]));
+		//R_CHK						(HW.pDevice->CreateQuery(&qdesc,&q_sync_point[1]));
+		//	Prevent error on first get data
+		//q_sync_point[0]->End();
+		//q_sync_point[1]->End();
+		//R_CHK						(HW.pDevice->CreateQuery(D3DQUERYTYPE_EVENT,&q_sync_point[0]));
+		//R_CHK						(HW.pDevice->CreateQuery(D3DQUERYTYPE_EVENT,&q_sync_point[1]));
+		for (u32 i = 0; i < HW.Caps.iGPUNum; ++i)
+			R_CHK(HW.pDevice->CreateQuery(&qdesc,&q_sync_point[i]));
+		q_sync_point[0]->End();
+	}
 
 	::PortalTraverser.initialize();
 	FluidManager.Initialize(70, 70, 70);
@@ -489,8 +492,11 @@ void CRender::destroy()
 	::PortalTraverser.destroy();
 	//_RELEASE					(q_sync_point[1]);
 	//_RELEASE					(q_sync_point[0]);
-	for (u32 i = 0; i < HW.Caps.iGPUNum; ++i)
-	_RELEASE(q_sync_point[i]);
+	if (!g_dedicated_server)
+	{
+		for (u32 i = 0; i < HW.Caps.iGPUNum; ++i)
+			_RELEASE(q_sync_point[i]);
+	}
 
 	HWOCC.occq_destroy();
 	xr_delete(Models);
@@ -534,24 +540,30 @@ void CRender::reset_begin()
 	HWOCC.occq_destroy();
 	//_RELEASE					(q_sync_point[1]);
 	//_RELEASE					(q_sync_point[0]);
-	for (u32 i = 0; i < HW.Caps.iGPUNum; ++i)
-	_RELEASE(q_sync_point[i]);
+	if (!g_dedicated_server)
+	{
+		for (u32 i = 0; i < HW.Caps.iGPUNum; ++i)
+			_RELEASE(q_sync_point[i]);
+	}
 }
 
 void CRender::reset_end()
 {
-	D3D10_QUERY_DESC qdesc;
-	qdesc.MiscFlags = 0;
-	qdesc.Query = D3D10_QUERY_EVENT;
-	//R_CHK						(HW.pDevice->CreateQuery(&qdesc,&q_sync_point[0]));
-	//R_CHK						(HW.pDevice->CreateQuery(&qdesc,&q_sync_point[1]));
-	for (u32 i = 0; i < HW.Caps.iGPUNum; ++i)
-		R_CHK(HW.pDevice->CreateQuery(&qdesc,&q_sync_point[i]));
-	//	Prevent error on first get data
-	q_sync_point[0]->End();
-	//q_sync_point[1]->End();
-	//R_CHK						(HW.pDevice->CreateQuery(D3DQUERYTYPE_EVENT,&q_sync_point[0]));
-	//R_CHK						(HW.pDevice->CreateQuery(D3DQUERYTYPE_EVENT,&q_sync_point[1]));
+	if (!g_dedicated_server)
+	{
+		D3D10_QUERY_DESC qdesc;
+		qdesc.MiscFlags = 0;
+		qdesc.Query = D3D10_QUERY_EVENT;
+		//R_CHK						(HW.pDevice->CreateQuery(&qdesc,&q_sync_point[0]));
+		//R_CHK						(HW.pDevice->CreateQuery(&qdesc,&q_sync_point[1]));
+		for (u32 i = 0; i < HW.Caps.iGPUNum; ++i)
+			R_CHK(HW.pDevice->CreateQuery(&qdesc,&q_sync_point[i]));
+		//	Prevent error on first get data
+		q_sync_point[0]->End();
+		//q_sync_point[1]->End();
+		//R_CHK						(HW.pDevice->CreateQuery(D3DQUERYTYPE_EVENT,&q_sync_point[0]));
+		//R_CHK						(HW.pDevice->CreateQuery(D3DQUERYTYPE_EVENT,&q_sync_point[1]));
+	}
 	HWOCC.occq_create(occq_size);
 
 	Target = xr_new<CRenderTarget>();
