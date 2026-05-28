@@ -43,25 +43,24 @@ CAI_Space::CAI_Space()
 
 void CAI_Space::init()
 {
-	if (g_dedicated_server)
-		return;
-
 #ifndef NO_SINGLE
-	VERIFY(!m_ef_storage);
-	m_ef_storage = xr_new<CEF_Storage>();
+	if (!g_dedicated_server)
+	{
+		VERIFY(!m_ef_storage);
+		m_ef_storage = xr_new<CEF_Storage>();
 
-	VERIFY(!m_graph_engine);
-	m_graph_engine = xr_new<CGraphEngine>(1024);
+		VERIFY(!m_graph_engine);
+		m_graph_engine = xr_new<CGraphEngine>(1024);
 
-	VERIFY(!m_cover_manager);
-	m_cover_manager = xr_new<CCoverManager>();
+		VERIFY(!m_cover_manager);
+		m_cover_manager = xr_new<CCoverManager>();
 
-	VERIFY(!m_patrol_path_storage);
-	m_patrol_path_storage = xr_new<CPatrolPathStorage>();
+		VERIFY(!m_patrol_path_storage);
+		m_patrol_path_storage = xr_new<CPatrolPathStorage>();
 
-	VERIFY(!m_moving_objects);
-	m_moving_objects = xr_new<::moving_objects>();
-
+		VERIFY(!m_moving_objects);
+		m_moving_objects = xr_new<::moving_objects>();
+	}
 #endif //#ifndef NO_SINGLE
 
 	VERIFY(!m_script_engine);
@@ -69,10 +68,14 @@ void CAI_Space::init()
 	script_engine().init();
 
 #ifndef NO_SINGLE
-	extern string4096 g_ca_stdout;
-	setvbuf(stderr, g_ca_stdout,_IOFBF, sizeof(g_ca_stdout));
+	if (!g_dedicated_server)
+	{
+		extern string4096 g_ca_stdout;
+		setvbuf(stderr, g_ca_stdout,_IOFBF, sizeof(g_ca_stdout));
+	}
 #endif //#ifndef NO_SINGLE
 }
+
 
 CAI_Space::~CAI_Space()
 {
@@ -144,10 +147,11 @@ void CAI_Space::load(LPCSTR level_name)
 
 void CAI_Space::unload(bool reload)
 {
+	if (m_script_engine)
+		script_engine().unload();
+
 	if (g_dedicated_server)
 		return;
-
-	script_engine().unload();
 
 	xr_delete(m_doors_manager);
 	xr_delete(m_graph_engine);
